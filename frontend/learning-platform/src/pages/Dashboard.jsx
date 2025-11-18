@@ -45,13 +45,38 @@ const Dashboard = () => {
     const checkUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          window.location.href = '/login';
-          return;
+        if (user) {
+          // User is logged in, stay on dashboard
+        } else {
+          // Listen for auth state change after OAuth redirect
+          const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+              // User just signed in, stay here
+            } else if (!session) {
+              window.location.href = '/';
+            }
+          });
+
+          // Also check for hash fragment after redirect (in case immediate redirect happens)
+          const hash = window.location.hash;
+          if (hash.includes('access_token')) {
+            // Wait a bit for Supabase to process the tokens from URL
+            setTimeout(() => {
+              window.location.reload(); // Force a reload to ensure session is established
+            }, 100);
+          } else {
+            // No tokens in URL and no user, redirect to home
+            window.location.href = '/';
+          }
+
+          // Cleanup listener
+          return () => {
+            authListener?.subscription?.unsubscribe();
+          };
         }
       } catch (error) {
         console.error('Error checking auth:', error);
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     };
     checkUser();
