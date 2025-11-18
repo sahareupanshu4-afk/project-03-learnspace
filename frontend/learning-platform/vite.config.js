@@ -14,4 +14,9 @@ export default defineConfig({
 
   },
 
+  build: {
+    outDir: 'build', // Output directory for production builds
+    chunkSizeWarningLimit: 1000, // Increase warning limit to 1000 kB (1MB)
+  },
+
 })
